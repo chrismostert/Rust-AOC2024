@@ -1,6 +1,6 @@
 use std::{collections::HashSet, hash::Hash, str::FromStr};
 
-use aoc_2024::{CharGrid, Direction};
+use aoc_2024::{Direction, Grid};
 use rayon::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -10,7 +10,7 @@ struct Guard {
 }
 
 impl Guard {
-    fn step(mut self, grid: &CharGrid, obstruction: Option<(isize, isize)>) -> Option<Self> {
+    fn step(mut self, grid: &Grid<char>, obstruction: Option<(isize, isize)>) -> Option<Self> {
         let (dx, dy) = self.direction.as_coord();
         let new_pos = (self.position.0 + dx, self.position.1 + dy);
         match (grid[new_pos], Some(new_pos) == obstruction) {
@@ -28,7 +28,7 @@ impl Guard {
 
     fn step_positions(
         mut self,
-        grid: &CharGrid,
+        grid: &Grid<char>,
         obstruction: Option<(isize, isize)>,
     ) -> Option<HashSet<(isize, isize)>> {
         let mut been = HashSet::from([self]);
@@ -47,9 +47,9 @@ impl Guard {
 }
 
 fn main() {
-    let grid = CharGrid::from_str(include_str!("../../inputs/day06.txt")).unwrap();
+    let grid = Grid::from_str(include_str!("../../inputs/day06.txt")).unwrap();
     let guard = Guard {
-        position: grid.find_char('^').unwrap(),
+        position: grid.find('^').unwrap(),
         direction: Direction::Up,
     };
 
