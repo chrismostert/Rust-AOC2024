@@ -1,12 +1,15 @@
 use std::{ops::Index, str::FromStr};
 
+use anyhow::{anyhow, Context};
 use itertools::Itertools;
 
 type CoordElement = isize;
 type Coord = (CoordElement, CoordElement);
 #[derive(Debug)]
 pub struct Grid<T> {
-    inner: Vec<Vec<T>>,
+    inner: Vec<T>,
+    width: usize,
+    height: usize,
     out_of_bound_value: T,
 }
 
@@ -14,62 +17,54 @@ impl<T> Index<Coord> for Grid<T> {
     type Output = T;
 
     fn index(&self, (x, y): Coord) -> &Self::Output {
-        if x < 0
-            || y < 0
-            || self.inner.get(y as usize).is_none()
-            || self.inner[y as usize].get(x as usize).is_none()
-        {
+        if x < 0 || y < 0 || x as usize >= self.width || y as usize >= self.height {
             return &self.out_of_bound_value;
         }
-        &self.inner[y as usize][x as usize]
+        &self.inner[x as usize + y as usize * self.width]
     }
 }
 
-impl FromStr for Grid<char> {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Grid {
-            inner: s.lines().map(|line| line.chars().collect()).collect(),
-            out_of_bound_value: '\0',
-        })
-    }
-}
-
-impl FromStr for Grid<u32> {
+impl<T: FromStr + Default> FromStr for Grid<T> {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Grid {
             inner: s
                 .lines()
-                .map(|line| line.chars().map(|c| c.to_digit(10).unwrap()).collect())
-                .collect(),
-            out_of_bound_value: 0,
+                .flat_map(|line| {
+                    (0..line.len()).map(|idx| {
+                        line[idx..=idx].parse().map_err(|_| {
+                            anyhow!(
+                                "Failed to parse '{}' into the desired type.",
+                                &line[idx..=idx]
+                            )
+                        })
+                    })
+                })
+                .try_collect()?,
+            width: s.lines().next().context("No lines")?.len(),
+            height: s.lines().count(),
+            out_of_bound_value: T::default(),
         })
     }
 }
 
 impl<T: Eq + PartialEq + Copy> Grid<T> {
-    pub fn inner(&self) -> &Vec<Vec<T>> {
+    pub fn inner(&self) -> &Vec<T> {
         &self.inner
     }
 
     pub fn find(&self, needle: T) -> Option<Coord> {
-        for (y, yvec) in self.inner.iter().enumerate() {
-            for (x, &elem) in yvec.iter().enumerate() {
-                if elem == needle {
-                    return Some((x as CoordElement, y as CoordElement));
-                }
-            }
-        }
-        None
+        (0..self.width)
+            .cartesian_product(0..self.height)
+            .find(|(x, y)| self.inner[x + y * self.width] == needle)
+            .map(|(x, y)| (x as CoordElement, y as CoordElement))
     }
 
     pub fn coords(&self) -> impl Iterator<Item = Coord> {
-        (0..self.inner.len())
-            .map(|y| y as CoordElement)
-            .cartesian_product((0..self.inner.len()).map(|x| x as CoordElement))
+        (0..self.width)
+            .cartesian_product(0..self.height)
+            .map(|(x, y)| (x as CoordElement, y as CoordElement))
     }
 }
 
