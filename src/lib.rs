@@ -54,17 +54,25 @@ impl<T: Eq + PartialEq + Copy> Grid<T> {
         &self.inner
     }
 
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.inner.iter()
+    }
+
     pub fn find(&self, needle: T) -> Option<Coord> {
         (0..self.width)
             .cartesian_product(0..self.height)
-            .find(|(x, y)| self.inner[x + y * self.width] == needle)
+            .find(|&(x, y)| self[(x as isize, y as isize)] == needle)
             .map(|(x, y)| (x as CoordElement, y as CoordElement))
     }
 
     pub fn coords(&self) -> impl Iterator<Item = Coord> {
-        (0..self.width)
-            .cartesian_product(0..self.height)
-            .map(|(x, y)| (x as CoordElement, y as CoordElement))
+        (0..self.height)
+            .cartesian_product(0..self.width)
+            .map(|(y, x)| (x as CoordElement, y as CoordElement))
+    }
+
+    pub fn items(&self) -> impl Iterator<Item = (&T, Coord)> {
+        self.iter().zip(self.coords())
     }
 }
 
