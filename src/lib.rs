@@ -1,10 +1,64 @@
-use std::{ops::Index, str::FromStr};
+use std::{
+    ops::{Add, Index, Mul, Sub},
+    str::FromStr,
+};
 
 use anyhow::{anyhow, Context};
 use itertools::Itertools;
 
-type CoordElement = isize;
-type Coord = (CoordElement, CoordElement);
+pub const UP: Point = Point(0, -1);
+pub const UPRIGHT: Point = Point(1, -1);
+pub const RIGHT: Point = Point(1, 0);
+pub const DOWNRIGHT: Point = Point(1, 1);
+pub const DOWN: Point = Point(0, 1);
+pub const DOWNLEFT: Point = Point(-1, 1);
+pub const LEFT: Point = Point(-1, 0);
+pub const UPLEFT: Point = Point(-1, -1);
+
+pub const DIAGONAL: [Point; 8] = [UP, UPRIGHT, RIGHT, DOWNRIGHT, DOWN, DOWNLEFT, LEFT, UPLEFT];
+
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub struct Point(pub isize, pub isize);
+
+impl From<(isize, isize)> for Point {
+    fn from(value: (isize, isize)) -> Self {
+        Point(value.0, value.1)
+    }
+}
+
+impl<T: Into<Point>> Add<T> for Point {
+    type Output = Self;
+
+    fn add(self, rhs: T) -> Self::Output {
+        let Point(x, y): Point = rhs.into();
+        Point(self.0 + x, self.1 + y)
+    }
+}
+
+impl<T: Into<Point>> Sub<T> for Point {
+    type Output = Self;
+
+    fn sub(self, rhs: T) -> Self::Output {
+        let Point(x, y): Point = rhs.into();
+        Point(self.0 - x, self.1 - y)
+    }
+}
+
+impl<T: Into<i64>> Mul<T> for Point {
+    type Output = Self;
+
+    fn mul(self, rhs: T) -> Self::Output {
+        let mul: i64 = rhs.into();
+        Point(self.0 * mul as isize, self.1 * mul as isize)
+    }
+}
+
+impl Point {
+    pub fn clockwise(self) -> Self {
+        Point(-self.1, self.0)
+    }
+}
+
 #[derive(Debug)]
 pub struct Grid<T> {
     inner: Vec<T>,
@@ -13,10 +67,11 @@ pub struct Grid<T> {
     out_of_bound_value: T,
 }
 
-impl<T> Index<Coord> for Grid<T> {
+impl<T, P: Into<Point>> Index<P> for Grid<T> {
     type Output = T;
 
-    fn index(&self, (x, y): Coord) -> &Self::Output {
+    fn index(&self, point: P) -> &Self::Output {
+        let Point(x, y) = point.into();
         if x < 0 || y < 0 || x as usize >= self.width || y as usize >= self.height {
             return &self.out_of_bound_value;
         }
@@ -58,48 +113,20 @@ impl<T: Eq + PartialEq + Copy> Grid<T> {
         self.inner.iter()
     }
 
-    pub fn find(&self, needle: T) -> Option<Coord> {
+    pub fn find(&self, needle: T) -> Option<Point> {
         (0..self.width)
             .cartesian_product(0..self.height)
             .find(|&(x, y)| self[(x as isize, y as isize)] == needle)
-            .map(|(x, y)| (x as CoordElement, y as CoordElement))
+            .map(|(x, y)| Point(x as isize, y as isize))
     }
 
-    pub fn coords(&self) -> impl Iterator<Item = Coord> {
+    pub fn coords(&self) -> impl Iterator<Item = Point> {
         (0..self.height)
             .cartesian_product(0..self.width)
-            .map(|(y, x)| (x as CoordElement, y as CoordElement))
+            .map(|(y, x)| Point(x as isize, y as isize))
     }
 
-    pub fn items(&self) -> impl Iterator<Item = (&T, Coord)> {
+    pub fn items(&self) -> impl Iterator<Item = (&T, Point)> {
         self.iter().zip(self.coords())
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Direction {
-    Up,
-    Right,
-    Down,
-    Left,
-}
-
-impl Direction {
-    pub fn turn_right(self) -> Self {
-        match self {
-            Self::Up => Self::Right,
-            Self::Right => Self::Down,
-            Self::Down => Self::Left,
-            Self::Left => Self::Up,
-        }
-    }
-
-    pub fn as_coord(&self) -> (isize, isize) {
-        match self {
-            Direction::Up => (0, -1),
-            Direction::Right => (1, 0),
-            Direction::Down => (0, 1),
-            Direction::Left => (-1, 0),
-        }
     }
 }

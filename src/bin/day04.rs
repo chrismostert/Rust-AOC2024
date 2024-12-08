@@ -1,23 +1,20 @@
-use aoc_2024::Grid;
+use aoc_2024::{Grid, Point, DIAGONAL, DOWNLEFT, DOWNRIGHT, UPLEFT, UPRIGHT};
 use std::str::FromStr;
 
-use itertools::Itertools;
-
-fn n_word_hits(grid: &Grid<char>, (x, y): (isize, isize), word: &[u8]) -> usize {
-    (-1..=1)
-        .cartesian_product(-1..=1)
-        .filter(|(dx, dy)| {
-            (0..word.len())
-                .all(|i| grid[(x + dx * i as isize, y + dy * i as isize)] == word[i] as char)
+fn n_word_hits(grid: &Grid<char>, point: Point, word: &[u8]) -> usize {
+    DIAGONAL
+        .into_iter()
+        .filter(|&direction| {
+            (0..word.len()).all(|i| grid[point + direction * i as u32] == word[i] as char)
         })
         .count()
 }
 
-fn is_cross_mas(grid: &Grid<char>, (x, y): (isize, isize)) -> bool {
-    grid[(x, y)] == 'A'
+fn is_cross_mas(grid: &Grid<char>, point: Point) -> bool {
+    grid[point] == 'A'
         && [
-            ((x - 1, y - 1), (x + 1, y + 1)),
-            ((x + 1, y - 1), (x - 1, y + 1)),
+            (point + DOWNLEFT, point + UPRIGHT),
+            (point + DOWNRIGHT, point + UPLEFT),
         ]
         .iter()
         .all(|&(a, b)| [['M', 'S'], ['S', 'M']].contains(&[grid[a], grid[b]]))
@@ -25,10 +22,10 @@ fn is_cross_mas(grid: &Grid<char>, (x, y): (isize, isize)) -> bool {
 
 fn main() {
     let input: Grid<char> = Grid::from_str(include_str!("../../inputs/day04.txt")).unwrap();
-    let (p1, p2) = input.coords().fold((0, 0), |(p1, p2), coord| {
+    let (p1, p2) = input.coords().fold((0, 0), |(p1, p2), point| {
         (
-            p1 + n_word_hits(&input, coord, b"XMAS"),
-            p2 + is_cross_mas(&input, coord) as usize,
+            p1 + n_word_hits(&input, point, b"XMAS"),
+            p2 + is_cross_mas(&input, point) as usize,
         )
     });
 

@@ -1,27 +1,27 @@
 use std::collections::{HashMap, HashSet};
 
-use aoc_2024::Grid;
+use aoc_2024::{Grid, Point};
 use itertools::Itertools;
-type Coord = (isize, isize);
-type Beacons = HashMap<char, Vec<Coord>>;
+type Beacons = HashMap<char, Vec<Point>>;
 
 fn solve(grid: &Grid<char>, beacons: &Beacons, p2: bool) -> usize {
-    let mut coords: HashSet<Coord> = HashSet::new();
-    for ((x1, y1), (x2, y2)) in beacons.values().flat_map(|coords| {
+    let mut coords: HashSet<Point> = HashSet::new();
+    for (point_1, point_2) in beacons.values().flat_map(|coords| {
         coords
             .iter()
             .cartesian_product(coords.iter())
             .filter(|(c1, c2)| c1 != c2)
+            .map(|(p1, p2)| (*p1, *p2))
     }) {
-        let (dx, dy) = (x2 - x1, y2 - y1);
+        let delta = point_2 - point_1;
         if !p2 {
-            if grid[(x1 - dx, y1 - dy)] != '\0' {
-                coords.insert((x1 - dx, y1 - dy));
+            if grid[point_1 - delta] != '\0' {
+                coords.insert(point_1 - delta);
             }
         } else {
             let mut mul = 0;
-            while grid[(x1 + mul * dx, y1 + mul * dy)] != '\0' {
-                coords.insert((x1 + mul * dx, y1 + mul * dy));
+            while grid[point_1 + delta * mul] != '\0' {
+                coords.insert(point_1 + delta * mul);
                 mul += 1
             }
         }
