@@ -16,6 +16,7 @@ pub const LEFT: Point = Point(-1, 0);
 pub const UPLEFT: Point = Point(-1, -1);
 
 pub const DIAGONAL: [Point; 8] = [UP, UPRIGHT, RIGHT, DOWNRIGHT, DOWN, DOWNLEFT, LEFT, UPLEFT];
+pub const ORTHOGONAL: [Point; 4] = [UP, RIGHT, DOWN, LEFT];
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub struct Point(pub isize, pub isize);
@@ -56,6 +57,10 @@ impl<T: Into<i64>> Mul<T> for Point {
 impl Point {
     pub fn clockwise(self) -> Self {
         Point(-self.1, self.0)
+    }
+
+    pub fn orthogonal(self) -> impl Iterator<Item = Self> {
+        ORTHOGONAL.into_iter().map(move |dir| dir + self)
     }
 }
 
