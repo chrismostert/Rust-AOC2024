@@ -1,5 +1,5 @@
 use std::{
-    ops::{Add, Index, Mul, Sub},
+    ops::{Add, Index, Mul, Rem, Sub},
     str::FromStr,
 };
 
@@ -51,6 +51,20 @@ impl<T: Into<i64>> Mul<T> for Point {
     fn mul(self, rhs: T) -> Self::Output {
         let mul: i64 = rhs.into();
         Point(self.0 * mul as isize, self.1 * mul as isize)
+    }
+}
+
+impl<T: Into<Point>> Rem<T> for Point {
+    type Output = Self;
+
+    fn rem(self, rhs: T) -> Self::Output {
+        let Point(x, y): Point = rhs.into();
+        let x_w = self.0 % x;
+        let y_w = self.1 % y;
+        Point(
+            if x_w >= 0 { x_w } else { x + x_w },
+            if y_w >= 0 { y_w } else { y + y_w },
+        )
     }
 }
 
