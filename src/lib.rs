@@ -1,9 +1,10 @@
 use std::{
-    ops::{Add, Index, Mul, Rem, Sub},
+    fmt::Display,
+    ops::{Add, Index, IndexMut, Mul, Rem, Sub},
     str::FromStr,
 };
 
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, bail, Context};
 use itertools::Itertools;
 
 pub const UP: Point = Point(0, -1);
@@ -24,6 +25,19 @@ pub struct Point(pub isize, pub isize);
 impl From<(isize, isize)> for Point {
     fn from(value: (isize, isize)) -> Self {
         Point(value.0, value.1)
+    }
+}
+
+impl TryFrom<char> for Point {
+    type Error = anyhow::Error;
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        match value {
+            '^' => Ok(UP),
+            '>' => Ok(RIGHT),
+            'v' => Ok(DOWN),
+            '<' => Ok(LEFT),
+            _ => bail!("{} was not a valid direction!", value),
+        }
     }
 }
 
@@ -78,7 +92,7 @@ impl Point {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Grid<T> {
     inner: Vec<T>,
     width: usize,
@@ -95,6 +109,19 @@ impl<T, P: Into<Point>> Index<P> for Grid<T> {
             return &self.out_of_bound_value;
         }
         &self.inner[x as usize + y as usize * self.width]
+    }
+}
+
+impl<T, P: Into<Point>> IndexMut<P> for Grid<T> {
+    fn index_mut(&mut self, point: P) -> &mut Self::Output {
+        let Point(x, y) = point.into();
+        if x < 0 || y < 0 || x as usize >= self.width || y as usize >= self.height {
+            panic!(
+                "Tried to mutate index {},{} which was out of bounds (limit {},{})",
+                x, y, self.width, self.height
+            );
+        }
+        &mut self.inner[x as usize + y as usize * self.width]
     }
 }
 
@@ -120,6 +147,18 @@ impl<T: FromStr + Default> FromStr for Grid<T> {
             height: s.lines().count(),
             out_of_bound_value: T::default(),
         })
+    }
+}
+
+impl<T: Eq + PartialEq + Copy + Display> Display for Grid<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for y in 0..self.height as isize {
+            for x in 0..self.width as isize {
+                write!(f, "{}", self[(x, y)])?;
+            }
+            writeln!(f)?;
+        }
+        Ok(())
     }
 }
 
