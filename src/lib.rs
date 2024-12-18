@@ -6,6 +6,9 @@ use std::{
 
 use anyhow::{anyhow, bail, Context};
 use itertools::Itertools;
+use std::iter;
+
+pub mod dijkstra;
 
 pub const UP: Point = Point(0, -1);
 pub const UPRIGHT: Point = Point(1, -1);
@@ -162,7 +165,7 @@ impl<T: Eq + PartialEq + Copy + Display> Display for Grid<T> {
     }
 }
 
-impl<T: Eq + PartialEq + Copy> Grid<T> {
+impl<T: Eq + PartialEq + Copy + Default> Grid<T> {
     pub fn inner(&self) -> &Vec<T> {
         &self.inner
     }
@@ -186,5 +189,14 @@ impl<T: Eq + PartialEq + Copy> Grid<T> {
 
     pub fn items(&self) -> impl Iterator<Item = (&T, Point)> {
         self.iter().zip(self.coords())
+    }
+
+    pub fn init(width: usize, height: usize, value: T) -> Self {
+        Grid {
+            height,
+            width,
+            out_of_bound_value: T::default(),
+            inner: iter::repeat(value).take(width * height).collect(),
+        }
     }
 }
