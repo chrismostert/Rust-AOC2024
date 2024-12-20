@@ -90,6 +90,11 @@ impl Point {
         Point(-self.1, self.0)
     }
 
+    pub fn manhattan(self, other: Point) -> u64 {
+        let dist = self - other;
+        (dist.0.abs() + dist.1.abs()) as u64
+    }
+
     pub fn orthogonal(self) -> impl Iterator<Item = Self> {
         ORTHOGONAL.into_iter().map(move |dir| dir + self)
     }
@@ -172,6 +177,10 @@ impl<T: Eq + PartialEq + Copy + Default> Grid<T> {
 
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.inner.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.inner.iter_mut()
     }
 
     pub fn find(&self, needle: T) -> Option<Point> {

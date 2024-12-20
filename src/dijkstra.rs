@@ -4,6 +4,24 @@ use std::{
     hash::Hash,
 };
 
+use itertools::Itertools;
+
+use crate::{Grid, Point};
+
+pub fn orthogonal_grid_moves(grid: &Grid<char>) -> impl Fn(&State<Point>) -> Vec<State<Point>> + '_ {
+    |state: &State<Point>| {
+        state
+            .position
+            .orthogonal()
+            .filter(|&new_pos| ['.', 'E'].contains(&grid[new_pos]))
+            .map(|new_pos| State {
+                position: new_pos,
+                cost: state.cost + 1,
+            })
+            .collect_vec()
+    }
+}
+
 #[derive(PartialEq, Eq)]
 pub struct State<T> {
     pub position: T,
@@ -13,6 +31,7 @@ pub struct State<T> {
 pub struct ShortestPath<T> {
     pub cost: u64,
     pub path: Vec<T>,
+    pub distances: HashMap<T, u64>
 }
 
 impl<T: Eq + PartialEq> Ord for State<T> {
@@ -61,6 +80,7 @@ pub fn dijkstra<T: Eq + PartialEq + Hash + Clone>(
             return Some(ShortestPath {
                 cost: state.cost,
                 path: get_path(&prevs, dest),
+                distances: dists
             });
         }
         if state.cost > *dists.get(&state.position).unwrap_or(&u64::MAX) {
