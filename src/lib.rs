@@ -9,6 +9,7 @@ use itertools::Itertools;
 use std::iter;
 
 pub mod dijkstra;
+pub mod graph;
 
 pub const UP: Point = Point(0, -1);
 pub const UPRIGHT: Point = Point(1, -1);
